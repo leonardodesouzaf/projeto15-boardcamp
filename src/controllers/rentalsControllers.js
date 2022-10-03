@@ -210,17 +210,21 @@ export async function endRentals (req, res){
         if(verificationRental.rows.length === 0 || verificationRental.rows[0].returnDate !== null){
             return res.status(400).send('Ação inválida!');
         }
-        const today = dayjs().format('YYYY-MM-DD');
-        let delayDays = today.diff(verificationRental.rows[0].rentDate,'day');
-        console.log(verificationRental.rows[0].rentDate);
-        /* await connection.query(`
+        const rentDate = new Date(verificationRental.rows[0].rentDate)
+		const today = new Date(verificationRental.rows[0].returnDate)
+		const totalDays = (today-rentDate) / (1000 * 3600 * 24)
+		const delayDays = totalDays-verificationRental.rows[0].daysRented
+        if(delayDays > 0){
+			verificationRental.rows[0].delayFee = delayDays * verificationRental.rows[0].originalPrice
+		}
+        await connection.query(`
 		UPDATE
             rentals 
         SET 
             "customerId"=$1,"gameId"=$2,"rentDate"=$3,"daysRented"=$4,"returnDate"=$5,"originalPrice"=$6, "delayFee"=$7
         WHERE
             id=$8;
-		`, [verificationRental.rows[0].customerId, verificationRental.rows[0].gameId, verificationRental.rows[0].rentDate, verificationRental.rows[0].daysRented, today, verificationRental.rows[0].originalPrice, verificationRental.rows[0].delayFee, req.params.id]); */
+		`, [verificationRental.rows[0].customerId, verificationRental.rows[0].gameId, verificationRental.rows[0].rentDate, verificationRental.rows[0].daysRented, dayjs().format('YYYY-MM-DD'), verificationRental.rows[0].originalPrice, verificationRental.rows[0].delayFee, req.params.id]);
         return res.status(200).send(result); 
     } catch (error) {
        return res.status(500).send('Não foi possível conectar ao servidor!');
