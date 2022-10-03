@@ -3,51 +3,98 @@ import connection from '../database/database.js';
 export async function getRentals (req, res){
     try {
         let query;
-        if(req.query.cpf){
-            query = await connection.query(`SELECT * FROM customers WHERE lower(cpf) LIKE lower($1);`,[`${req.query.cpf}%`]);
-        }else{
-            query = await connection.query(`SELECT * FROM customers;`);
+        let result = [];
+        if(req.query.gameId){
+            query = await connection.query(`
+            SELECT 
+                rentals.*,customers.name as "customername",customers.id as "customerid",games.name as "gamename",games.id as "gameid",games."categoryId" as "gamecategoryId",categories.name as "gamecategoryName"
+            FROM 
+                rentals
+            JOIN
+                customers
+            ON
+                customers.id = rentals."customerId"
+            JOIN
+                games
+            ON 
+                rentals."gameId" = $1 
+            JOIN
+                categories
+            ON
+                categories.id = games."categoryId";
+            `,[req.query.gameId]);
+            for (let i = 0; i < query.rows.length; i++) {
+                let data = query.rows[i];
+                let rental = {
+                    id: data.id,
+                    customerId: data.customerId,
+                    gameId: data.gameId,
+                    rentDate: data.rentDate,
+                    daysRented: data.daysRented,
+                    returnDate: data.returnDate,
+                    originalPrice: data.originalPrice,
+                    delayFee: data.delayFee,
+                    customer: {
+                        id: data.customerid,
+                        name: data.customername
+                    },
+                    game: {
+                        id: data.gameid,
+                        name: data.gamename,
+                        categoryId: data.gamecategoryId,
+                        categoryName: data.gamecategoryName
+                    }
+                };
+                result.push(rental);
+            }
+        }if(req.query.customerId){
+            query = await connection.query(`
+            SELECT 
+                rentals.*,customers.name as "customername",customers.id as "customerid",games.name as "gamename",games.id as "gameid",games."categoryId" as "gamecategoryId",categories.name as "gamecategoryName"
+            FROM 
+                rentals
+            JOIN
+                customers
+            ON
+                customers.id = $1
+            JOIN
+                games
+            ON 
+                rentals."gameId" = games.id 
+            JOIN
+                categories
+            ON
+                categories.id = games."categoryId";
+            `,[req.query.customerId]);
+            for (let i = 0; i < query.rows.length; i++) {
+                let data = query.rows[i];
+                let rental = {
+                    id: data.id,
+                    customerId: data.customerId,
+                    gameId: data.gameId,
+                    rentDate: data.rentDate,
+                    daysRented: data.daysRented,
+                    returnDate: data.returnDate,
+                    originalPrice: data.originalPrice,
+                    delayFee: data.delayFee,
+                    customer: {
+                        id: data.customerid,
+                        name: data.customername
+                    },
+                    game: {
+                        id: data.gameid,
+                        name: data.gamename,
+                        categoryId: data.gamecategoryId,
+                        categoryName: data.gamecategoryName
+                    }
+                };
+                result.push(rental);
+            }
         }
-        return res.status(200).send(query.rows); 
+        return res.status(200).send(result); 
     } catch (error) {
        return res.status(500).send('Não foi possível conectar ao servidor!');
     }
 };
 
-export async function getCustomersById (req, res){
-    try {
-        let query = await connection.query(`SELECT * FROM customers WHERE id = $1;`,[req.params.id]);
-        if(query.rows.length === 0){
-            return res.status(404).send();
-        }
-        return res.status(200).send(query.rows); 
-    } catch (error) {
-       return res.status(500).send('Não foi possível conectar ao servidor!');
-    }
-};
 
-export async function postCustomers (req, res){
-    try {
-        const verificationCpf = await connection.query(`SELECT * FROM customers WHERE cpf = $1;`,[req.body.cpf]);
-        if(verificationCpf.rows.length != 0){
-            return res.status(409).send('Cliente já cadastrado!');
-        }
-        let query = await connection.query(`INSERT INTO customers (name,phone,cpf,birthday) VALUES ($1,$2,$3,$4);`,[req.body.name,req.body.phone,req.body.cpf,req.body.birthday]);
-        return res.status(201).send(); 
-    } catch (error) {
-       return res.status(500).send('Não foi possível conectar ao servidor!');
-    }
-};
-
-export async function updateCustomers (req, res){
-    try {
-        const verificationCpf = await connection.query(`SELECT * FROM customers WHERE cpf = $1;`,[req.body.cpf]);
-        if((verificationCpf.rows.length != 0) && (verificationCpf.rows[0].id != req.params.id)){
-            return res.status(409).send(verificationCpf.rows);
-        }
-        await connection.query(`UPDATE customers SET name=$1,phone=$2,cpf=$3,birthday=$4 WHERE id=$5;`,[req.body.name,req.body.phone,req.body.cpf,req.body.birthday,req.params.id]);
-        return res.status(201).send(); 
-    } catch (error) {
-       return res.status(500).send('Não foi possível conectar ao servidor!');
-    }
-};

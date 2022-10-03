@@ -4,6 +4,7 @@ import cors from 'cors';
 import categoriesRoutes from './routes/categoriesRoutes.js';
 import gamesRoutes from './routes/gamesRoutes.js';
 import customersRoutes from './routes/customersRoutes.js';
+import rentalsRoutes from './routes/rentalsRoutes.js';
 
 dotenv.config();
 const app = express();
@@ -14,6 +15,7 @@ const router = express.Router();
 router.use(categoriesRoutes);
 router.use(gamesRoutes);
 router.use(customersRoutes);
+router.use(rentalsRoutes);
 
 app.use(router);
 
