@@ -42,7 +42,7 @@ export async function postCustomers (req, res){
 export async function updateCustomers (req, res){
     try {
         const verificationCpf = await connection.query(`SELECT * FROM customers WHERE cpf = $1;`,[req.body.cpf]);
-        if(verificationCpf.rows.length != 0 && verificationCpf.rows.id != req.params.id){
+        if((verificationCpf.rows.length != 0) && (verificationCpf.rows[0].id != req.params.id)){
             return res.status(409).send(verificationCpf.rows);
         }
         await connection.query(`UPDATE customers SET name=$1,phone=$2,cpf=$3,birthday=$4 WHERE id=$5;`,[req.body.name,req.body.phone,req.body.cpf,req.body.birthday,req.params.id]);
