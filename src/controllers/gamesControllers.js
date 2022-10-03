@@ -5,9 +5,31 @@ export async function getGames (req, res){
         let query;
         if(req.query.name){
             query = await connection.query(`SELECT * FROM games WHERE lower(name) LIKE lower($1);`,[`${req.query.name}%`]);
+            /* query = await connection.query(`
+            SELECT 
+                games.*,categories.name as "categoryName"
+            FROM 
+                categories 
+            JOIN 
+                games
+            ON 
+                games."categoryId" = categories.id;
+            WHERE 
+                lower(games.name) LIKE lower($1);
+        `,[`${req.query.name}%`]); */
         }else{
             query = await connection.query(`SELECT * FROM games;`);
         }
+        query = await connection.query(`
+            SELECT 
+                games.*,categories.name as "categoryName"
+            FROM 
+                categories 
+            JOIN 
+                games
+            ON 
+                games."categoryId" = categories.id;
+        `);
         return res.status(200).send(query.rows); 
     } catch (error) {
        return res.status(500).send('Não foi possível conectar ao servidor!');
